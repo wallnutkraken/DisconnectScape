@@ -13,24 +13,21 @@ function pingWorldAsync (world) {
         type:'HEAD',
         url: "http://" + world.host,
         async: true,
-        success : function() {
-            debugger;
-        },
         error: function () {
             endTime = (new Date()).getTime();
             /* Not an accurate representation of what the ping is, as there is no ICMP
              * pinging in javascript */
-            world.ping = Math.ceil((endTime - startTime) / 5);
+            world.ping = Math.ceil((endTime - startTime) / 3);
 
             worldContainer.pingCallback();
-            //document.getElementById(pingIdPrefix + world.number).innerText = world.ping + " ms";
         }
     });
 }
 
 /* Pings all worlds asynchronously and sets the data */
 function pingWorlds(worldContainer) {
-    while (worldContainer.isPinging){}
+    if (worldContainer.isPinging === true)
+        return;
 
     worldContainer.isPinging = true;
     var length = worldContainer.worlds.length;
@@ -155,4 +152,8 @@ function getWorlds(worldContainerRef) {
 function populateWorldTable() {
     worldContainer = getWorldContainer();
     getWorlds(worldContainer);
+}
+
+function refresh_onclick() {
+    pingWorlds(worldContainer);
 }

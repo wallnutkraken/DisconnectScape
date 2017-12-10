@@ -36,7 +36,33 @@ html {
     text-shadow: none;
 }
 
+body {
+    background: black url("../img/bg2.jpg") repeat-y center;
+    width: 100%;
+}
+
+button {
+    background: #362d1a;
+    border: #5b482d;
+    color: whitesmoke;
+    text-shadow: 2px 2px 5px black;
+    margin-top: 3px;
+    margin-right: 5px;
+    align-self: flex-start;
+}
+
+div.centered {
+    display: flex;
+    justify-content: center;
+}
+
+div#pings {
+    margin: 0 auto;
+}
+
 table.ping_table {
+    align-self: center;
+
     text-align: center;
     border-collapse: collapse;
     background: #362d1a;
