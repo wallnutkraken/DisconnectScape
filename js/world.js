@@ -4,27 +4,38 @@ var freeIconUri = "img/Free-to-play_icon.png";
 var memberIconUri = "img/Member_icon.png";
 const worldListColumnClass = "ping_table_cell";
 const worldListRowClass = "ping_table_row";
+const pingIdPrefix = "ping_cell_ping_";
 
-function pingWorldAsync () {
+function pingWorldAsync (world) {
     var startTime = (new Date()).getTime(),
         endTime;
-
     $.ajax({
-        type:'GET',
-        url: this.host,
+        type:'HEAD',
+        url: "http://" + world.host,
         async: true,
         success : function() {
+            debugger;
+        },
+        error: function () {
             endTime = (new Date()).getTime();
-            this.ping = endTime - startTime;
+            /* Not an accurate representation of what the ping is, as there is no ICMP
+             * pinging in javascript */
+            world.ping = Math.ceil((endTime - startTime) / 5);
+
+            worldContainer.pingCallback();
+            //document.getElementById(pingIdPrefix + world.number).innerText = world.ping + " ms";
         }
     });
 }
 
 /* Pings all worlds asynchronously and sets the data */
-function pingWorlds(worlds) {
-    var length = worlds.length;
+function pingWorlds(worldContainer) {
+    while (worldContainer.isPinging){}
+
+    worldContainer.isPinging = true;
+    var length = worldContainer.worlds.length;
     for (var index = 0; index < length; index++) {
-        worlds[index].pingWorldAsync();
+        pingWorldAsync(worldContainer.worlds[index]);
     }
 }
 
@@ -53,28 +64,42 @@ function getWorldContainer() {
         return 0;
     };
 
+    /* ping-specific */
+    worldContainer.isPinging = false;
+    worldContainer.pingCount = 0;
+    worldContainer.pingCallback = pingCallback;
+
     return worldContainer;
 }
 
-function createTable() {
+function pingCallback() {
+    this.pingCount++;
+    if (this.pingCount >= this.worlds.length) {
+        this.isPinging = false;
+        /* Update table, pinging is over */
+        this.updateTable()
+    }
+}
+
+function createTable(sorter) {
     if (this.worlds === "undefined")
         return;
     var table = document.getElementById("ping_table_body");
 
-    this.worlds.sort(this.sortByNumber);
+    this.worlds.sort(sorter);
     for (var index = 0; index < this.worlds.length; index++) {
         var world = this.worlds[index];
 
         var newRow = table.insertRow();
         newRow.classList.add(worldListRowClass);
-        table.id = "ping_row_" + world.number;
+        newRow.id = "ping_row_" + world.number;
 
         var typeCell = newRow.insertCell(0);
         var numberCell = newRow.insertCell(1);
         var pingCell = newRow.insertCell(2);
         var activityCell = newRow.insertCell(3);
 
-        pingCell.id = "ping_cell_ping_" + world.number;
+        pingCell.id = pingIdPrefix + world.number;
 
         typeCell.appendChild(getImage(world.type));
         //typeCell.innerHTML = getImage(world.type);
@@ -103,7 +128,12 @@ function getImage(type) {
 }
 
 function updateTable() {
-    /* TODO */
+    var table = document.getElementById("ping_table");
+    for (var index = this.worlds.length; index > 0; index--) {
+        table.deleteRow(index);
+    }
+
+    this.createTable(this.sortByPing);
 }
 
 function getWorlds(worldContainerRef) {
@@ -115,7 +145,8 @@ function getWorlds(worldContainerRef) {
         if (request.readyState === 4 && request.status === 200) {
             var responseJson = request.responseText;
             worldContainerRef.updateWorlds(JSON.parse(responseJson));
-            worldContainerRef.createTable();
+            worldContainerRef.createTable(worldContainerRef.sortByNumber);
+            pingWorlds(worldContainerRef);
         }
     };
     request.send();
@@ -123,5 +154,5 @@ function getWorlds(worldContainerRef) {
 
 function populateWorldTable() {
     worldContainer = getWorldContainer();
-    getWorlds(worldContainer)
+    getWorlds(worldContainer);
 }
