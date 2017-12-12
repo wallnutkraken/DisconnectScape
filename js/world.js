@@ -2,6 +2,7 @@
 var worldContainer;
 var freeIconUri = "img/Free-to-play_icon.png";
 var memberIconUri = "img/Member_icon.png";
+var currentRequests = [];
 const worldListColumnClass = "ping_table_cell";
 const worldListRowClass = "ping_table_row";
 const pingIdPrefix = "ping_cell_ping_";
@@ -9,19 +10,19 @@ const pingIdPrefix = "ping_cell_ping_";
 function pingWorldAsync (world) {
     var startTime = (new Date()).getTime(),
         endTime;
-    $.ajax({
+    currentRequests.push($.ajax({
         type:'HEAD',
         url: "http://" + world.host,
         async: true,
-        error: function () {
+        error: function (resp) {
             endTime = (new Date()).getTime();
             /* Not an accurate representation of what the ping is, as there is no ICMP
              * pinging in javascript */
             world.ping = Math.ceil((endTime - startTime) / 3);
 
-            worldContainer.pingCallback();
+            worldContainer.pingCallback(resp);
         }
-    });
+    }));
 }
 
 /* Pings all worlds asynchronously and sets the data */
@@ -70,8 +71,9 @@ function getWorldContainer() {
     return worldContainer;
 }
 
-function pingCallback() {
+function pingCallback(request) {
     this.pingCount++;
+    currentRequests.splice(currentRequests.indexOf(request), 1);
     if (this.pingCount >= this.worlds.length) {
         this.isPinging = false;
         /* Update table, pinging is over */
@@ -166,6 +168,13 @@ function getWorlds(worldContainerRef) {
     request.send();
 }
 
+/* Cancel all outgoing requests */
+function beforeUnload() {
+    for (var index = 0; index < currentRequests.length; index++) {
+        currentRequests[index].abort();
+    }
+}
+
 function getPlayers() {
     var request = new XMLHttpRequest();
     var wc = this;
@@ -199,6 +208,7 @@ function getPlayers() {
 function populateWorldTable() {
     worldContainer = getWorldContainer();
     getWorlds(worldContainer);
+    window.onbeforeunload = beforeUnload;
 
     /* Start timely ping */
     window.setInterval(function () {
