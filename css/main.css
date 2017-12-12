@@ -52,8 +52,12 @@ button {
 }
 
 div.centered {
-    display: flex;
-    justify-content: center;
+    margin: auto;
+    position: center;
+    width: 15%;
+    border: 3px #3d332e;
+    background: #19160f;
+    padding: 10px;
 }
 
 div#pings {
