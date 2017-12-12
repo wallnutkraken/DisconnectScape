@@ -65,6 +65,7 @@ function getWorldContainer() {
     worldContainer.isPinging = false;
     worldContainer.pingCount = 0;
     worldContainer.pingCallback = pingCallback;
+    worldContainer.getPlayers = getPlayers;
 
     return worldContainer;
 }
@@ -74,7 +75,8 @@ function pingCallback() {
     if (this.pingCount >= this.worlds.length) {
         this.isPinging = false;
         /* Update table, pinging is over */
-        this.updateTable()
+        this.getPlayers();
+        this.updateTable();
     }
 }
 
@@ -95,21 +97,36 @@ function createTable(sorter) {
         var numberCell = newRow.insertCell(1);
         var pingCell = newRow.insertCell(2);
         var activityCell = newRow.insertCell(3);
+        var playersCell = newRow.insertCell(4);
 
         pingCell.id = pingIdPrefix + world.number;
 
         typeCell.appendChild(getImage(world.type));
-        //typeCell.innerHTML = getImage(world.type);
         typeCell.classList.add(worldListColumnClass);
+
         numberCell.innerText = world.number;
         numberCell.classList.add(worldListColumnClass);
+
         pingCell.classList.add(worldListColumnClass);
         if (world.ping !== null)
+        {
             pingCell.innerText = world.ping;
-        else
+        }
+        else {
             pingCell.innerText = "Loading...";
+        }
+
         activityCell.innerText = world.activity;
+        if (world.activity.startsWith("PVP")) {
+            newRow.classList.add("pvp-world");
+        }
         activityCell.classList.add(worldListColumnClass);
+
+        if (world.players) {
+            playersCell.innerText = world.players;
+        } else {
+            playersCell.innerText = "-";
+        }
     }
 }
 
@@ -140,10 +157,43 @@ function getWorlds(worldContainerRef) {
     request.async = true;
     request.onreadystatechange = function() {
         if (request.readyState === 4 && request.status === 200) {
-            var responseJson = request.responseText;
-            worldContainerRef.updateWorlds(JSON.parse(responseJson));
+            var worlds = JSON.parse(request.responseText);
+            for (var index = 0; index < worlds.length; index++) {
+                worlds[index].players = null;
+            }
+            worldContainerRef.updateWorlds(worlds);
             worldContainerRef.createTable(worldContainerRef.sortByNumber);
             pingWorlds(worldContainerRef);
+        }
+    };
+    request.send();
+}
+
+function getPlayers() {
+    var request = new XMLHttpRequest();
+    var wc = this;
+    request.open("GET", "http://localhost:10101/players");
+    request.onreadystatechange = function () {
+        if (request.readyState === 4) {
+            var players = JSON.parse(request.responseText);
+            players.sort(wc.sortByNumber);
+            var worldList = wc.worlds;
+            worldList.sort(wc.sortByNumber);
+            if (players.length !== worldList.length) {
+                console.log("World count mismatch");
+            }
+
+            for (var index = 0; index < worldList.length; index++) {
+                var world = worldList[index];
+                var player = players[index];
+                if (world.number !== player.number) {
+                    console.log("World mismatch on " + world.number + " and " + player.number);
+                    continue;
+                }
+                world.players = player.players;
+            }
+            worldList.sort(wc.sortByPing);
+            wc.worlds = worldList;
         }
     };
     request.send();
@@ -152,8 +202,10 @@ function getWorlds(worldContainerRef) {
 function populateWorldTable() {
     worldContainer = getWorldContainer();
     getWorlds(worldContainer);
+
+    /* Start timely ping */
+    window.setInterval(function () {
+        pingWorlds(worldContainer);
+    }, 10000);
 }
 
-function refresh_onclick() {
-    pingWorlds(worldContainer);
-}
