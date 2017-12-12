@@ -158,9 +158,6 @@ function getWorlds(worldContainerRef) {
     request.onreadystatechange = function() {
         if (request.readyState === 4 && request.status === 200) {
             var worlds = JSON.parse(request.responseText);
-            for (var index = 0; index < worlds.length; index++) {
-                worlds[index].players = null;
-            }
             worldContainerRef.updateWorlds(worlds);
             worldContainerRef.createTable(worldContainerRef.sortByNumber);
             pingWorlds(worldContainerRef);
