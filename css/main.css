@@ -41,6 +41,24 @@ body {
     width: 100%;
 }
 
+div.warning {
+    border: 2px solid #c6b030;
+    text-align: center;
+    margin: auto;
+    color: whitesmoke;
+    text-shadow: 2px 2px 5px black;
+    width: 40%;
+    background-color: rgba(241, 219, 51, 0.5);
+}
+
+div.margin {
+    margin: 10px;
+}
+
+p.title {
+    font-weight: bold;
+}
+
 button {
     background: #362d1a;
     border: #5b482d;
