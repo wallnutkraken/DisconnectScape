@@ -51,20 +51,13 @@ button {
     align-self: flex-start;
 }
 
-div.centered {
-    margin: auto;
-    position: center;
-    width: 15%;
-    border: 3px #3d332e;
-    background: #19160f;
-    padding: 10px;
-}
-
 div#pings {
     margin: 0 auto;
 }
 
 table.ping_table {
+    margin: auto;
+
     align-self: center;
 
     text-align: center;
